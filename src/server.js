@@ -142,7 +142,7 @@ app.put('/api/usuarios/:id', async (req, res) => {
 });
 
 // ==========================================
-// PROFISSIONAIS (EQUIPE)
+// PROFISSIONAIS E EQUIPA
 // ==========================================
 app.get('/api/profissionais', async (req, res) => { 
     try { 
@@ -407,7 +407,11 @@ app.post('/api/atividades', async (req, res) => {
 
 app.post('/api/alertas', async (req, res) => {
     try { 
-        await db.run(`INSERT INTO Alerta (id, usuarioId, tipo, mensagem, resolvido) VALUES (?, ?, ?, ?, 0)`, [crypto.randomUUID(), req.body.usuarioId, req.body.tipo, req.body.mensagem]); 
+        // Adicionados "treino" e "grupo" ao INSERT
+        await db.run(
+            `INSERT INTO Alerta (id, usuarioId, tipo, mensagem, treino, grupo, resolvido) VALUES (?, ?, ?, ?, ?, ?, 0)`, 
+            [crypto.randomUUID(), req.body.usuarioId, req.body.tipo, req.body.mensagem, req.body.treino || null, req.body.grupo || null]
+        ); 
         return res.status(201).json({ sucesso: true }); 
     } catch (e) { 
         return res.status(500).json({ erro: e.message }); 
@@ -485,7 +489,7 @@ iniciarBanco().then(async (dbInst) => {
     await db.run(`CREATE TABLE IF NOT EXISTS TurmaAluno (usuarioId TEXT, turmaId TEXT, PRIMARY KEY (usuarioId, turmaId))`);
     await db.run(`CREATE TABLE IF NOT EXISTS Prescricao (id TEXT PRIMARY KEY, usuarioId TEXT, grupo TEXT, diasDaSemana TEXT, cor TEXT, titulo TEXT, tipo TEXT, duracaoMinutos INTEGER, series INTEGER, repeticoes INTEGER, carga TEXT, meta TEXT, focoMuscular TEXT, gifUrl TEXT, dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP)`);
     await db.run(`CREATE TABLE IF NOT EXISTS Atividade (id TEXT PRIMARY KEY, usuarioId TEXT, grupo TEXT, cor TEXT, titulo TEXT, tipo TEXT, duracaoSegundos INTEGER, series INTEGER, repeticoes INTEGER, carga TEXT, meta TEXT, focoMuscular TEXT, gifUrl TEXT, feedback TEXT, dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-    await db.run(`CREATE TABLE IF NOT EXISTS Alerta (id TEXT PRIMARY KEY, usuarioId TEXT, tipo TEXT, mensagem TEXT, resolvido INTEGER DEFAULT 0, dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+    await db.run(`CREATE TABLE IF NOT EXISTS Alerta (id TEXT PRIMARY KEY, usuarioId TEXT, tipo TEXT, mensagem TEXT, resolvido INTEGER DEFAULT 0, treino TEXT, grupo TEXT, dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP)`);
     await db.run(`CREATE TABLE IF NOT EXISTS Acervo (id TEXT PRIMARY KEY, profissionalId TEXT, grupo TEXT, cor TEXT, titulo TEXT, tipo TEXT, duracaoMinutos INTEGER, series INTEGER, repeticoes INTEGER, carga TEXT, meta TEXT, focoMuscular TEXT, gifUrl TEXT, dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP)`);
     
     console.log(`📦 Base de dados iniciada em modo: ${process.env.NODE_ENV || 'development'}`);
