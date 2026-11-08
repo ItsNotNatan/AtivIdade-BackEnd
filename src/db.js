@@ -27,6 +27,21 @@ function adaptarParaPostgres(sql) {
         .replace(/\bAlerta\b/g, '"Alerta"')
         .replace(/\bAcervo\b/g, '"Acervo"');
         
+    // 3. Protege os nomes das colunas camelCase com aspas duplas
+    parsedSql = parsedSql
+        .replace(/\bdataCriacao\b/g, '"dataCriacao"')
+        .replace(/\bprofissionalId\b/g, '"profissionalId"')
+        .replace(/\busuarioId\b/g, '"usuarioId"')
+        .replace(/\bturmaId\b/g, '"turmaId"')
+        .replace(/\bduracaoMinutos\b/g, '"duracaoMinutos"')
+        .replace(/\bduracaoSegundos\b/g, '"duracaoSegundos"')
+        .replace(/\bfocoMuscular\b/g, '"focoMuscular"')
+        .replace(/\bgifUrl\b/g, '"gifUrl"')
+        .replace(/\bdiasDaSemana\b/g, '"diasDaSemana"')
+        .replace(/\bregistroProfissional\b/g, '"registroProfissional"')
+        .replace(/\bcontatoEmergenciaNome\b/g, '"contatoEmergenciaNome"')
+        .replace(/\bcontatoEmergenciaTel\b/g, '"contatoEmergenciaTel"');
+
     return parsedSql;
 }
 

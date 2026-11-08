@@ -148,7 +148,7 @@ app.get('/api/profissionais', async (req, res) => {
     try { 
         const profs = await db.all(
             `SELECT id, nome, celular, email, especialidade, registroProfissional, formacao, biografia, dataCriacao 
-             FROM User WHERE tipo = "profissional" ORDER BY nome ASC`
+             FROM User WHERE tipo = 'profissional' ORDER BY nome ASC`
         );
         return res.json(profs); 
     } catch (e) { 
@@ -179,7 +179,7 @@ app.post('/api/profissionais', async (req, res) => {
 
 app.delete('/api/profissionais/:id', async (req, res) => { 
     try { 
-        await db.run('DELETE FROM User WHERE id = ? AND tipo = "profissional"', [req.params.id]); 
+        await db.run(`DELETE FROM User WHERE id = ? AND tipo = 'profissional'`, [req.params.id]); 
         return res.json({ sucesso: true }); 
     } catch (e) { 
         return res.status(500).json({ erro: e.message }); 
@@ -194,7 +194,7 @@ app.get('/api/turmas', async (req, res) => {
         const turmas = await db.all('SELECT * FROM Turma ORDER BY dataCriacao ASC');
         const alunos = await db.all(
             `SELECT u.id, u.nome, u.celular, u.idade, u.mobilidade, u.condicoes, ta.turmaId 
-             FROM User u JOIN TurmaAluno ta ON u.id = ta.usuarioId WHERE u.tipo = "idoso"`
+             FROM User u JOIN TurmaAluno ta ON u.id = ta.usuarioId WHERE u.tipo = 'idoso'`
         );
         return res.json(turmas.map(t => ({ ...t, alunos: alunos.filter(a => a.turmaId === t.id) })));
     } catch (e) { 
@@ -246,7 +246,7 @@ app.get('/api/utentes', async (req, res) => {
     try {
         const utentes = await db.all(
             `SELECT id, nome, celular, idade, mobilidade, condicoes, contatoEmergenciaNome, contatoEmergenciaTel 
-             FROM User WHERE tipo = "idoso" ORDER BY nome ASC`
+             FROM User WHERE tipo = 'idoso' ORDER BY nome ASC`
         );
         const matriculas = await db.all('SELECT usuarioId, turmaId FROM TurmaAluno');
         return res.json(utentes.map(u => ({ ...u, turmasIds: matriculas.filter(m => m.usuarioId === u.id).map(m => m.turmaId) })));
@@ -438,8 +438,8 @@ app.put('/api/alertas/:id/resolver', async (req, res) => {
 
 app.get('/api/estatisticas', async (req, res) => { 
     try { 
-        const idosos = await db.get('SELECT COUNT(*) as total FROM User WHERE tipo = "idoso"');
-        const profissionais = await db.get('SELECT COUNT(*) as total FROM User WHERE tipo = "profissional"');
+        const idosos = await db.get(`SELECT COUNT(*) as total FROM User WHERE tipo = 'idoso'`);
+        const profissionais = await db.get(`SELECT COUNT(*) as total FROM User WHERE tipo = 'profissional'`);
         const turmas = await db.get('SELECT COUNT(*) as total FROM Turma');
         const treinos = await db.get('SELECT COUNT(*) as total FROM Atividade');
         const alertas = await db.get('SELECT COUNT(*) as total FROM Alerta');
