@@ -1,58 +1,26 @@
-// src/db.js
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export async function iniciarBanco() {
-    // Abre (ou cria) o ficheiro do banco de dados na raiz do projeto
-    const db = await open({
-        filename: './database.sqlite',
+    // Se estiver no Render, usa a pasta do disco persistente (/data). Se for local, usa a raiz do projeto.
+    const isProduction = process.env.NODE_ENV === 'production';
+    const dbDir = isProduction ? '/data' : path.join(__dirname, '..');
+    
+    // Garante que a pasta existe antes de criar o ficheiro SQLite
+    if (isProduction && !fs.existsSync(dbDir)) {
+        fs.mkdirSync(dbDir, { recursive: true });
+    }
+
+    const dbPath = path.join(dbDir, 'database.sqlite');
+
+    return open({
+        filename: dbPath,
         driver: sqlite3.Database
     });
-
-    // Cria as tabelas se elas ainda não existirem
-    await db.exec(`
-        CREATE TABLE IF NOT EXISTS User (
-            id TEXT PRIMARY KEY,
-            nome TEXT NOT NULL,
-            telemovel TEXT UNIQUE NOT NULL,
-            pin TEXT NOT NULL,
-            tipo TEXT NOT NULL,
-            idade INTEGER,
-            peso REAL,
-            altura REAL,
-            mobilidade TEXT,
-            condicoes TEXT,
-            contatoEmergenciaNome TEXT,
-            contatoEmergenciaTel TEXT,
-            turmaId TEXT,
-            criadoEm DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE TABLE IF NOT EXISTS Turma (
-            id TEXT PRIMARY KEY,
-            nome TEXT NOT NULL,
-            profissionalId TEXT,
-            criadoEm DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE TABLE IF NOT EXISTS Atividade (
-            id TEXT PRIMARY KEY,
-            usuarioId TEXT NOT NULL,
-            titulo TEXT NOT NULL,
-            duracaoSegundos INTEGER NOT NULL,
-            feedback TEXT NOT NULL,
-            dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE TABLE IF NOT EXISTS Alerta (
-            id TEXT PRIMARY KEY,
-            usuarioId TEXT NOT NULL,
-            tipo TEXT NOT NULL,
-            mensagem TEXT NOT NULL,
-            resolvido INTEGER DEFAULT 0,
-            dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-    `);
-
-    return db;
 }

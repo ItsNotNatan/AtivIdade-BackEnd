@@ -1,0 +1,58 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                    String      @id @default(uuid())
+  nome                  String
+  telemovel             String      @unique
+  pin                   String
+  tipo                  String
+  idade                 Int?
+  peso                  Float?
+  altura                Float?
+  mobilidade            String?
+  condicoes             String?
+  contatoEmergenciaNome String?
+  contatoEmergenciaTel  String?
+  turmaId               String?
+  turma                 Turma?      @relation(fields: [turmaId], references: [id])
+  atividades            Atividade[]
+  alertas               Alerta[]
+  turmasSupervisionadas Turma[]     @relation("ProfissionalTurma")
+  criadoEm              DateTime    @default(now())
+}
+
+model Turma {
+  id             String   @id @default(uuid())
+  nome           String
+  profissionalId String?
+  profissional   User?    @relation("ProfissionalTurma", fields: [profissionalId], references: [id])
+  alunos         User[]
+  criadoEm       DateTime @default(now())
+}
+
+model Atividade {
+  id              String   @id @default(uuid())
+  usuarioId       String
+  usuario         User     @relation(fields: [usuarioId], references: [id])
+  titulo          String
+  duracaoSegundos Int
+  feedback        String
+  dataCriacao     DateTime @default(now())
+}
+
+model Alerta {
+  id          String   @id @default(uuid())
+  usuarioId   String
+  usuario     User     @relation(fields: [usuarioId], references: [id])
+  tipo        String
+  mensagem    String
+  resolvido   Boolean  @default(false)
+  dataCriacao DateTime @default(now())
+}
