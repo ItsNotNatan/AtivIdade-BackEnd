@@ -205,8 +205,8 @@ app.get('/api/turmas', async (req, res) => {
 app.post('/api/turmas', async (req, res) => { 
     try { 
         await db.run(
-            `INSERT INTO Turma (id, nome, horario, dias, cor) VALUES (?, ?, ?, ?, ?)`, 
-            [crypto.randomUUID(), req.body.nome, req.body.horario, req.body.dias, req.body.cor || '#059669']
+            `INSERT INTO Turma (id, nome, horario, dias, cor, profissionalId) VALUES (?, ?, ?, ?, ?, ?)`, 
+            [crypto.randomUUID(), req.body.nome, req.body.horario, req.body.dias, req.body.cor || '#059669', req.body.profissionalId || null]
         ); 
         return res.status(201).json({ sucesso: true }); 
     } catch (e) { 
@@ -481,7 +481,7 @@ iniciarBanco().then(async (dbInst) => {
         contatoEmergenciaTel TEXT, 
         dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
-    await db.run(`CREATE TABLE IF NOT EXISTS Turma (id TEXT PRIMARY KEY, nome TEXT, horario TEXT, dias TEXT, cor TEXT, dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+    await db.run(`CREATE TABLE IF NOT EXISTS Turma (id TEXT PRIMARY KEY, nome TEXT, horario TEXT, dias TEXT, cor TEXT, profissionalId TEXT, dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP)`);
     await db.run(`CREATE TABLE IF NOT EXISTS TurmaAluno (usuarioId TEXT, turmaId TEXT, PRIMARY KEY (usuarioId, turmaId))`);
     await db.run(`CREATE TABLE IF NOT EXISTS Prescricao (id TEXT PRIMARY KEY, usuarioId TEXT, grupo TEXT, diasDaSemana TEXT, cor TEXT, titulo TEXT, tipo TEXT, duracaoMinutos INTEGER, series INTEGER, repeticoes INTEGER, carga TEXT, meta TEXT, focoMuscular TEXT, gifUrl TEXT, dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP)`);
     await db.run(`CREATE TABLE IF NOT EXISTS Atividade (id TEXT PRIMARY KEY, usuarioId TEXT, grupo TEXT, cor TEXT, titulo TEXT, tipo TEXT, duracaoSegundos INTEGER, series INTEGER, repeticoes INTEGER, carga TEXT, meta TEXT, focoMuscular TEXT, gifUrl TEXT, feedback TEXT, dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP)`);
