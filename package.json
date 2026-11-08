@@ -1,13 +1,11 @@
 {
-  "name": "atividade-app",
-  "private": true,
+  "name": "atividade-backend",
   "version": "1.0.0",
   "type": "module",
+  "main": "src/server.js",
   "scripts": {
-    "dev:frontend": "vite",
-    "dev:backend": "node src/server.js",
-    "build": "vite build",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "dev": "node src/server.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -15,15 +13,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
-    "lucide-react": "^0.378.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.23.1",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.2.1",
-    "vite": "^5.2.0"
   }
 }
