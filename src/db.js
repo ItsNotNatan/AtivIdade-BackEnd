@@ -9,11 +9,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export async function iniciarBanco() {
-    const isProduction = process.env.NODE_ENV === 'production';
-    const pastaBanco = isProduction ? '/data' : path.join(__dirname, '..');
+    let pastaBanco = path.join(__dirname, '..');
 
-    if (isProduction && !fs.existsSync(pastaBanco)) {
-        fs.mkdirSync(pastaBanco, { recursive: true });
+    // Tenta usar /data apenas se o disco persistente realmente existir e for gravável
+    if (fs.existsSync('/data')) {
+        try {
+            fs.accessSync('/data', fs.constants.W_OK);
+            pastaBanco = '/data';
+        } catch {
+            pastaBanco = path.join(__dirname, '..');
+        }
     }
 
     const caminhoArquivo = path.join(pastaBanco, 'database.sqlite');
