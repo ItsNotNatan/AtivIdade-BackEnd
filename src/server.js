@@ -44,6 +44,7 @@ app.post('/api/auth/login', async (req, res) => {
                 celular: usuario.celular, 
                 email: usuario.email || '',
                 tipo: usuario.tipo, 
+                fotoPerfil: usuario.fotoPerfil || '',
                 especialidade: usuario.especialidade || '', 
                 registroProfissional: usuario.registroProfissional || '',
                 formacao: usuario.formacao || '', 
@@ -61,7 +62,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 app.post('/api/auth/registo', async (req, res) => {
-    const { nome, idade, celular, pin, mobilidade, condicoes, contatoEmergenciaNome, contatoEmergenciaTel } = req.body;
+    const { nome, idade, celular, pin, mobilidade, condicoes, contatoEmergenciaNome, contatoEmergenciaTel, fotoPerfil } = req.body;
     try {
         if (await db.get('SELECT id FROM User WHERE celular = ?', [celular])) {
             return res.status(400).json({ erro: 'Este celular já está cadastrado.' });
@@ -69,8 +70,8 @@ app.post('/api/auth/registo', async (req, res) => {
         
         const pinHash = await bcrypt.hash(pin, 10);
         await db.run(
-            `INSERT INTO User (id, nome, celular, pin, tipo, idade, mobilidade, condicoes, contatoEmergenciaNome, contatoEmergenciaTel) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+            `INSERT INTO User (id, nome, celular, pin, tipo, idade, mobilidade, condicoes, contatoEmergenciaNome, contatoEmergenciaTel, fotoPerfil) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
             [
                 crypto.randomUUID(), 
                 nome, 
@@ -81,7 +82,8 @@ app.post('/api/auth/registo', async (req, res) => {
                 mobilidade || 'Caminho sem ajuda', 
                 Array.isArray(condicoes) ? condicoes.join(', ') : (condicoes || ''), 
                 contatoEmergenciaNome || '', 
-                contatoEmergenciaTel || ''
+                contatoEmergenciaTel || '',
+                fotoPerfil || null
             ]
         );
         return res.status(201).json({ sucesso: true });
@@ -97,7 +99,7 @@ app.put('/api/usuarios/:id', async (req, res) => {
     const { 
         nome, celular, email, especialidade, registroProfissional, 
         formacao, biografia, pin, idade, condicoes, 
-        contatoEmergenciaNome, contatoEmergenciaTel 
+        contatoEmergenciaNome, contatoEmergenciaTel, fotoPerfil 
     } = req.body;
 
     try {
@@ -119,18 +121,19 @@ app.put('/api/usuarios/:id', async (req, res) => {
                 idade = COALESCE(?, idade), 
                 condicoes = COALESCE(?, condicoes), 
                 contatoEmergenciaNome = COALESCE(?, contatoEmergenciaNome), 
-                contatoEmergenciaTel = COALESCE(?, contatoEmergenciaTel) 
+                contatoEmergenciaTel = COALESCE(?, contatoEmergenciaTel),
+                fotoPerfil = COALESCE(?, fotoPerfil)
              WHERE id = ?`,
             [
                 nome || null, celular || null, email || null, especialidade || null, 
                 registroProfissional || null, formacao || null, biografia || null, 
                 pinHash || null, idade ? Number(idade) : null, condicoes || null, 
-                contatoEmergenciaNome || null, contatoEmergenciaTel || null, req.params.id
+                contatoEmergenciaNome || null, contatoEmergenciaTel || null, fotoPerfil || null, req.params.id
             ]
         );
 
         const usuarioAtualizado = await db.get(
-            `SELECT id, nome, celular, email, tipo, especialidade, registroProfissional, formacao, biografia, idade, mobilidade, condicoes, contatoEmergenciaNome, contatoEmergenciaTel 
+            `SELECT id, nome, celular, email, tipo, fotoPerfil, especialidade, registroProfissional, formacao, biografia, idade, mobilidade, condicoes, contatoEmergenciaNome, contatoEmergenciaTel 
              FROM User WHERE id = ?`, 
             [req.params.id]
         );
@@ -147,7 +150,7 @@ app.put('/api/usuarios/:id', async (req, res) => {
 app.get('/api/profissionais', async (req, res) => { 
     try { 
         const profs = await db.all(
-            `SELECT id, nome, celular, email, especialidade, registroProfissional, formacao, biografia, dataCriacao 
+            `SELECT id, nome, celular, email, fotoPerfil, especialidade, registroProfissional, formacao, biografia, dataCriacao 
              FROM User WHERE tipo = 'profissional' ORDER BY nome ASC`
         );
         return res.json(profs); 
@@ -157,18 +160,18 @@ app.get('/api/profissionais', async (req, res) => {
 });
 
 app.post('/api/profissionais', async (req, res) => {
-    const { nome, celular, pin, especialidade, registroProfissional, formacao, biografia, email } = req.body;
+    const { nome, celular, pin, especialidade, registroProfissional, formacao, biografia, email, fotoPerfil } = req.body;
     try {
         if (await db.get('SELECT id FROM User WHERE celular = ?', [celular])) {
             return res.status(400).json({ erro: 'Celular já cadastrado.' });
         }
         
         await db.run(
-            `INSERT INTO User (id, nome, celular, email, pin, tipo, especialidade, registroProfissional, formacao, biografia) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+            `INSERT INTO User (id, nome, celular, email, pin, tipo, especialidade, registroProfissional, formacao, biografia, fotoPerfil) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
             [
                 crypto.randomUUID(), nome, celular, email || '', await bcrypt.hash(pin, 10), 
-                'profissional', especialidade, registroProfissional || '', formacao || '', biografia || ''
+                'profissional', especialidade, registroProfissional || '', formacao || '', biografia || '', fotoPerfil || null
             ]
         );
         return res.status(201).json({ sucesso: true });
@@ -193,7 +196,7 @@ app.get('/api/turmas', async (req, res) => {
     try {
         const turmas = await db.all('SELECT * FROM Turma ORDER BY dataCriacao ASC');
         const alunos = await db.all(
-            `SELECT u.id, u.nome, u.celular, u.idade, u.mobilidade, u.condicoes, ta.turmaId 
+            `SELECT u.id, u.nome, u.celular, u.fotoPerfil, u.idade, u.mobilidade, u.condicoes, ta.turmaId 
              FROM User u JOIN TurmaAluno ta ON u.id = ta.usuarioId WHERE u.tipo = 'idoso'`
         );
         return res.json(turmas.map(t => ({ ...t, alunos: alunos.filter(a => a.turmaId === t.id) })));
@@ -245,7 +248,7 @@ app.delete('/api/turmas/:turmaId/alunos/:usuarioId', async (req, res) => {
 app.get('/api/utentes', async (req, res) => {
     try {
         const utentes = await db.all(
-            `SELECT id, nome, celular, idade, mobilidade, condicoes, contatoEmergenciaNome, contatoEmergenciaTel 
+            `SELECT id, nome, celular, fotoPerfil, idade, mobilidade, condicoes, contatoEmergenciaNome, contatoEmergenciaTel 
              FROM User WHERE tipo = 'idoso' ORDER BY nome ASC`
         );
         const matriculas = await db.all('SELECT usuarioId, turmaId FROM TurmaAluno');
@@ -407,7 +410,6 @@ app.post('/api/atividades', async (req, res) => {
 
 app.post('/api/alertas', async (req, res) => {
     try { 
-        // Adicionados "treino" e "grupo" ao INSERT
         await db.run(
             `INSERT INTO Alerta (id, usuarioId, tipo, mensagem, treino, grupo, resolvido) VALUES (?, ?, ?, ?, ?, ?, 0)`, 
             [crypto.randomUUID(), req.body.usuarioId, req.body.tipo, req.body.mensagem, req.body.treino || null, req.body.grupo || null]
@@ -467,6 +469,7 @@ const PORT = process.env.PORT || 3001;
 
 iniciarBanco().then(async (dbInst) => {
     db = dbInst;
+    // Tabela User atualizada com a coluna fotoPerfil
     await db.run(`CREATE TABLE IF NOT EXISTS User (
         id TEXT PRIMARY KEY, 
         nome TEXT, 
@@ -474,6 +477,7 @@ iniciarBanco().then(async (dbInst) => {
         email TEXT, 
         pin TEXT, 
         tipo TEXT, 
+        fotoPerfil TEXT, 
         especialidade TEXT, 
         registroProfissional TEXT, 
         formacao TEXT, 
@@ -485,6 +489,14 @@ iniciarBanco().then(async (dbInst) => {
         contatoEmergenciaTel TEXT, 
         dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
+    
+    // Adicionar a coluna fotoPerfil a bases de dados existentes sem perder dados
+    try {
+        await db.run(`ALTER TABLE User ADD COLUMN fotoPerfil TEXT`);
+    } catch (err) {
+        // Se a coluna já existir, ignora o erro silenciosamente
+    }
+
     await db.run(`CREATE TABLE IF NOT EXISTS Turma (id TEXT PRIMARY KEY, nome TEXT, horario TEXT, dias TEXT, cor TEXT, profissionalId TEXT, dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP)`);
     await db.run(`CREATE TABLE IF NOT EXISTS TurmaAluno (usuarioId TEXT, turmaId TEXT, PRIMARY KEY (usuarioId, turmaId))`);
     await db.run(`CREATE TABLE IF NOT EXISTS Prescricao (id TEXT PRIMARY KEY, usuarioId TEXT, grupo TEXT, diasDaSemana TEXT, cor TEXT, titulo TEXT, tipo TEXT, duracaoMinutos INTEGER, series INTEGER, repeticoes INTEGER, carga TEXT, meta TEXT, focoMuscular TEXT, gifUrl TEXT, dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP)`);
