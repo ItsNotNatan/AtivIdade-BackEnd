@@ -25,7 +25,7 @@ app.get('/api/status', (req, res) => res.json({ status: 'API AtivIdade operacion
 app.post('/api/auth/login', async (req, res) => {
     const { celular, pin } = req.body;
     try {
-        const usuario = await db.get('SELECT * FROM User WHERE celular = ?', [celular]);
+        const usuario = await db.get('SELECT * FROM "User" WHERE celular = ?', [celular]);
         if (!usuario || !(await bcrypt.compare(pin, usuario.pin))) {
             return res.status(401).json({ erro: 'Credenciais inválidas.' });
         }
@@ -64,13 +64,13 @@ app.post('/api/auth/login', async (req, res) => {
 app.post('/api/auth/registo', async (req, res) => {
     const { nome, idade, celular, pin, mobilidade, condicoes, contatoEmergenciaNome, contatoEmergenciaTel, fotoPerfil } = req.body;
     try {
-        if (await db.get('SELECT id FROM User WHERE celular = ?', [celular])) {
+        if (await db.get('SELECT id FROM "User" WHERE celular = ?', [celular])) {
             return res.status(400).json({ erro: 'Este celular já está cadastrado.' });
         }
         
         const pinHash = await bcrypt.hash(pin, 10);
         await db.run(
-            `INSERT INTO User (id, nome, celular, pin, tipo, idade, mobilidade, condicoes, contatoEmergenciaNome, contatoEmergenciaTel, fotoPerfil) 
+            `INSERT INTO "User" (id, nome, celular, pin, tipo, idade, mobilidade, condicoes, "contatoEmergenciaNome", "contatoEmergenciaTel", "fotoPerfil") 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
             [
                 crypto.randomUUID(), 
@@ -109,20 +109,20 @@ app.put('/api/usuarios/:id', async (req, res) => {
         }
 
         await db.run(
-            `UPDATE User SET 
+            `UPDATE "User" SET 
                 nome = COALESCE(?, nome), 
                 celular = COALESCE(?, celular), 
                 email = COALESCE(?, email), 
                 especialidade = COALESCE(?, especialidade), 
-                registroProfissional = COALESCE(?, registroProfissional), 
+                "registroProfissional" = COALESCE(?, "registroProfissional"), 
                 formacao = COALESCE(?, formacao), 
                 biografia = COALESCE(?, biografia), 
                 pin = COALESCE(?, pin), 
                 idade = COALESCE(?, idade), 
                 condicoes = COALESCE(?, condicoes), 
-                contatoEmergenciaNome = COALESCE(?, contatoEmergenciaNome), 
-                contatoEmergenciaTel = COALESCE(?, contatoEmergenciaTel),
-                fotoPerfil = COALESCE(?, fotoPerfil)
+                "contatoEmergenciaNome" = COALESCE(?, "contatoEmergenciaNome"), 
+                "contatoEmergenciaTel" = COALESCE(?, "contatoEmergenciaTel"),
+                "fotoPerfil" = COALESCE(?, "fotoPerfil")
              WHERE id = ?`,
             [
                 nome || null, celular || null, email || null, especialidade || null, 
@@ -133,8 +133,8 @@ app.put('/api/usuarios/:id', async (req, res) => {
         );
 
         const usuarioAtualizado = await db.get(
-            `SELECT id, nome, celular, email, tipo, fotoPerfil, especialidade, registroProfissional, formacao, biografia, idade, mobilidade, condicoes, contatoEmergenciaNome, contatoEmergenciaTel 
-             FROM User WHERE id = ?`, 
+            `SELECT id, nome, celular, email, tipo, "fotoPerfil", especialidade, "registroProfissional", formacao, biografia, idade, mobilidade, condicoes, "contatoEmergenciaNome", "contatoEmergenciaTel" 
+             FROM "User" WHERE id = ?`, 
             [req.params.id]
         );
 
@@ -150,8 +150,8 @@ app.put('/api/usuarios/:id', async (req, res) => {
 app.get('/api/profissionais', async (req, res) => { 
     try { 
         const profs = await db.all(
-            `SELECT id, nome, celular, email, fotoPerfil, especialidade, registroProfissional, formacao, biografia, dataCriacao 
-             FROM User WHERE tipo = 'profissional' ORDER BY nome ASC`
+            `SELECT id, nome, celular, email, "fotoPerfil", especialidade, "registroProfissional", formacao, biografia, "dataCriacao" 
+             FROM "User" WHERE tipo = 'profissional' ORDER BY nome ASC`
         );
         return res.json(profs); 
     } catch (e) { 
@@ -162,12 +162,12 @@ app.get('/api/profissionais', async (req, res) => {
 app.post('/api/profissionais', async (req, res) => {
     const { nome, celular, pin, especialidade, registroProfissional, formacao, biografia, email, fotoPerfil } = req.body;
     try {
-        if (await db.get('SELECT id FROM User WHERE celular = ?', [celular])) {
+        if (await db.get('SELECT id FROM "User" WHERE celular = ?', [celular])) {
             return res.status(400).json({ erro: 'Celular já cadastrado.' });
         }
         
         await db.run(
-            `INSERT INTO User (id, nome, celular, email, pin, tipo, especialidade, registroProfissional, formacao, biografia, fotoPerfil) 
+            `INSERT INTO "User" (id, nome, celular, email, pin, tipo, especialidade, "registroProfissional", formacao, biografia, "fotoPerfil") 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
             [
                 crypto.randomUUID(), nome, celular, email || '', await bcrypt.hash(pin, 10), 
@@ -182,7 +182,7 @@ app.post('/api/profissionais', async (req, res) => {
 
 app.delete('/api/profissionais/:id', async (req, res) => { 
     try { 
-        await db.run(`DELETE FROM User WHERE id = ? AND tipo = 'profissional'`, [req.params.id]); 
+        await db.run(`DELETE FROM "User" WHERE id = ? AND tipo = 'profissional'`, [req.params.id]); 
         return res.json({ sucesso: true }); 
     } catch (e) { 
         return res.status(500).json({ erro: e.message }); 
@@ -194,10 +194,10 @@ app.delete('/api/profissionais/:id', async (req, res) => {
 // ==========================================
 app.get('/api/turmas', async (req, res) => {
     try {
-        const turmas = await db.all('SELECT * FROM Turma ORDER BY dataCriacao ASC');
+        const turmas = await db.all('SELECT * FROM "Turma" ORDER BY "dataCriacao" ASC');
         const alunos = await db.all(
-            `SELECT u.id, u.nome, u.celular, u.fotoPerfil, u.idade, u.mobilidade, u.condicoes, ta.turmaId 
-             FROM User u JOIN TurmaAluno ta ON u.id = ta.usuarioId WHERE u.tipo = 'idoso'`
+            `SELECT u.id, u.nome, u.celular, u."fotoPerfil", u.idade, u.mobilidade, u.condicoes, ta."turmaId" 
+             FROM "User" u JOIN "TurmaAluno" ta ON u.id = ta."usuarioId" WHERE u.tipo = 'idoso'`
         );
         return res.json(turmas.map(t => ({ ...t, alunos: alunos.filter(a => a.turmaId === t.id) })));
     } catch (e) { 
@@ -208,7 +208,7 @@ app.get('/api/turmas', async (req, res) => {
 app.post('/api/turmas', async (req, res) => { 
     try { 
         await db.run(
-            `INSERT INTO Turma (id, nome, horario, dias, cor, profissionalId) VALUES (?, ?, ?, ?, ?, ?)`, 
+            `INSERT INTO "Turma" (id, nome, horario, dias, cor, "profissionalId") VALUES (?, ?, ?, ?, ?, ?)`, 
             [crypto.randomUUID(), req.body.nome, req.body.horario, req.body.dias, req.body.cor || '#059669', req.body.profissionalId || null]
         ); 
         return res.status(201).json({ sucesso: true }); 
@@ -219,8 +219,8 @@ app.post('/api/turmas', async (req, res) => {
 
 app.delete('/api/turmas/:id', async (req, res) => {
     try { 
-        await db.run('DELETE FROM Turma WHERE id = ?', [req.params.id]); 
-        await db.run('DELETE FROM TurmaAluno WHERE turmaId = ?', [req.params.id]); 
+        await db.run('DELETE FROM "Turma" WHERE id = ?', [req.params.id]); 
+        await db.run('DELETE FROM "TurmaAluno" WHERE "turmaId" = ?', [req.params.id]); 
         return res.json({ sucesso: true }); 
     } catch (e) { 
         return res.status(500).json({ erro: e.message }); 
@@ -229,7 +229,7 @@ app.delete('/api/turmas/:id', async (req, res) => {
 
 app.post('/api/turmas/:turmaId/alunos', async (req, res) => { 
     try { 
-        await db.run('INSERT OR IGNORE INTO TurmaAluno (usuarioId, turmaId) VALUES (?, ?)', [req.body.usuarioId, req.params.turmaId]); 
+        await db.run('INSERT INTO "TurmaAluno" ("usuarioId", "turmaId") VALUES (?, ?) ON CONFLICT DO NOTHING', [req.body.usuarioId, req.params.turmaId]); 
         return res.json({ sucesso: true }); 
     } catch (e) { 
         return res.status(500).json({ erro: e.message }); 
@@ -238,7 +238,7 @@ app.post('/api/turmas/:turmaId/alunos', async (req, res) => {
 
 app.delete('/api/turmas/:turmaId/alunos/:usuarioId', async (req, res) => { 
     try { 
-        await db.run('DELETE FROM TurmaAluno WHERE usuarioId = ? AND turmaId = ?', [req.params.usuarioId, req.params.turmaId]); 
+        await db.run('DELETE FROM "TurmaAluno" WHERE "usuarioId" = ? AND "turmaId" = ?', [req.params.usuarioId, req.params.turmaId]); 
         return res.json({ sucesso: true }); 
     } catch (e) { 
         return res.status(500).json({ erro: e.message }); 
@@ -248,10 +248,10 @@ app.delete('/api/turmas/:turmaId/alunos/:usuarioId', async (req, res) => {
 app.get('/api/utentes', async (req, res) => {
     try {
         const utentes = await db.all(
-            `SELECT id, nome, celular, fotoPerfil, idade, mobilidade, condicoes, contatoEmergenciaNome, contatoEmergenciaTel 
-             FROM User WHERE tipo = 'idoso' ORDER BY nome ASC`
+            `SELECT id, nome, celular, "fotoPerfil", idade, mobilidade, condicoes, "contatoEmergenciaNome", "contatoEmergenciaTel" 
+             FROM "User" WHERE tipo = 'idoso' ORDER BY nome ASC`
         );
-        const matriculas = await db.all('SELECT usuarioId, turmaId FROM TurmaAluno');
+        const matriculas = await db.all('SELECT "usuarioId", "turmaId" FROM "TurmaAluno"');
         return res.json(utentes.map(u => ({ ...u, turmasIds: matriculas.filter(m => m.usuarioId === u.id).map(m => m.turmaId) })));
     } catch (e) { 
         return res.status(500).json({ erro: e.message }); 
@@ -263,7 +263,7 @@ app.get('/api/utentes', async (req, res) => {
 // ==========================================
 app.get('/api/acervo/:profissionalId', async (req, res) => { 
     try { 
-        const itens = await db.all(`SELECT * FROM Acervo WHERE profissionalId = ? ORDER BY grupo ASC, titulo ASC`, [req.params.profissionalId]);
+        const itens = await db.all(`SELECT * FROM "Acervo" WHERE "profissionalId" = ? ORDER BY grupo ASC, titulo ASC`, [req.params.profissionalId]);
         return res.json(itens); 
     } catch (e) { 
         return res.status(500).json({ erro: e.message }); 
@@ -274,7 +274,7 @@ app.post('/api/acervo', async (req, res) => {
     const { profissionalId, titulo, tipo, duracaoMinutos, series, repeticoes, carga, meta, focoMuscular, gifUrl, grupo, cor } = req.body;
     try {
         await db.run(
-            `INSERT INTO Acervo (id, profissionalId, titulo, tipo, duracaoMinutos, series, repeticoes, carga, meta, focoMuscular, gifUrl, grupo, cor) 
+            `INSERT INTO "Acervo" (id, "profissionalId", titulo, tipo, "duracaoMinutos", series, repeticoes, carga, meta, "focoMuscular", "gifUrl", grupo, cor) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
             [crypto.randomUUID(), profissionalId, titulo, tipo, duracaoMinutos || null, series || null, repeticoes || null, carga || null, meta || null, focoMuscular || null, gifUrl || null, grupo || 'Modelo', cor || '#059669']
         );
@@ -288,7 +288,7 @@ app.put('/api/acervo/:id', async (req, res) => {
     const { titulo, tipo, duracaoMinutos, series, repeticoes, carga, meta, focoMuscular, gifUrl, grupo, cor } = req.body;
     try {
         await db.run(
-            `UPDATE Acervo SET titulo=?, tipo=?, duracaoMinutos=?, series=?, repeticoes=?, carga=?, meta=?, focoMuscular=?, gifUrl=?, grupo=?, cor=? WHERE id=?`, 
+            `UPDATE "Acervo" SET titulo=?, tipo=?, "duracaoMinutos"=?, series=?, repeticoes=?, carga=?, meta=?, "focoMuscular"=?, "gifUrl"=?, grupo=?, cor=? WHERE id=?`, 
             [titulo, tipo, duracaoMinutos || null, series || null, repeticoes || null, carga || null, meta || null, focoMuscular || null, gifUrl || null, grupo, cor, req.params.id]
         );
         return res.json({ sucesso: true });
@@ -299,7 +299,7 @@ app.put('/api/acervo/:id', async (req, res) => {
 
 app.delete('/api/acervo/:id', async (req, res) => { 
     try { 
-        await db.run('DELETE FROM Acervo WHERE id = ?', [req.params.id]); 
+        await db.run('DELETE FROM "Acervo" WHERE id = ?', [req.params.id]); 
         return res.json({ sucesso: true }); 
     } catch (e) { 
         return res.status(500).json({ erro: e.message }); 
@@ -310,14 +310,14 @@ app.post('/api/prescricoes', async (req, res) => {
     const { usuarioId, turmaId, titulo, tipo, duracaoMinutos, series, repeticoes, carga, meta, focoMuscular, gifUrl, grupo, diasDaSemana, cor } = req.body;
     try {
         let destinatarios = [];
-        if (turmaId) destinatarios = (await db.all('SELECT usuarioId FROM TurmaAluno WHERE turmaId = ?', [turmaId])).map(a => a.usuarioId);
+        if (turmaId) destinatarios = (await db.all('SELECT "usuarioId" FROM "TurmaAluno" WHERE "turmaId" = ?', [turmaId])).map(a => a.usuarioId);
         else if (usuarioId) destinatarios = [usuarioId];
         
         if (destinatarios.length === 0) return res.status(400).json({ erro: 'Nenhum paciente selecionado.' });
         
         for (const id of destinatarios) {
             await db.run(
-                `INSERT INTO Prescricao (id, usuarioId, titulo, tipo, duracaoMinutos, series, repeticoes, carga, meta, focoMuscular, gifUrl, grupo, diasDaSemana, cor) 
+                `INSERT INTO "Prescricao" (id, "usuarioId", titulo, tipo, "duracaoMinutos", series, repeticoes, carga, meta, "focoMuscular", "gifUrl", grupo, "diasDaSemana", cor) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
                 [crypto.randomUUID(), id, titulo, tipo, duracaoMinutos || null, series || null, repeticoes || null, carga || null, meta || null, focoMuscular || null, gifUrl || null, grupo || 'Treino', diasDaSemana || '', cor || '#059669']
             );
@@ -332,7 +332,7 @@ app.post('/api/prescricoes/lote', async (req, res) => {
     const { usuarioId, turmaId, treinos, diasDaSemana } = req.body;
     try {
         let destinatarios = [];
-        if (turmaId) destinatarios = (await db.all('SELECT usuarioId FROM TurmaAluno WHERE turmaId = ?', [turmaId])).map(a => a.usuarioId);
+        if (turmaId) destinatarios = (await db.all('SELECT "usuarioId" FROM "TurmaAluno" WHERE "turmaId" = ?', [turmaId])).map(a => a.usuarioId);
         else if (usuarioId) destinatarios = [usuarioId];
         
         if (destinatarios.length === 0) return res.status(400).json({ erro: 'Nenhum paciente selecionado.' });
@@ -340,7 +340,7 @@ app.post('/api/prescricoes/lote', async (req, res) => {
         for (const id of destinatarios) {
             for (const treino of treinos) {
                 await db.run(
-                    `INSERT INTO Prescricao (id, usuarioId, titulo, tipo, duracaoMinutos, series, repeticoes, carga, meta, focoMuscular, gifUrl, grupo, diasDaSemana, cor) 
+                    `INSERT INTO "Prescricao" (id, "usuarioId", titulo, tipo, "duracaoMinutos", series, repeticoes, carga, meta, "focoMuscular", "gifUrl", grupo, "diasDaSemana", cor) 
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
                     [crypto.randomUUID(), id, treino.titulo, treino.tipo, treino.duracaoMinutos || null, treino.series || null, treino.repeticoes || null, treino.carga || null, treino.meta || null, treino.focoMuscular || null, treino.gifUrl || null, treino.grupo || 'Treino', diasDaSemana || '', treino.cor || '#059669']
                 );
@@ -356,7 +356,7 @@ app.put('/api/prescricoes/:id', async (req, res) => {
     const { titulo, tipo, duracaoMinutos, series, repeticoes, carga, meta, focoMuscular, gifUrl, grupo, diasDaSemana, cor } = req.body;
     try {
         await db.run(
-            `UPDATE Prescricao SET titulo=?, tipo=?, duracaoMinutos=?, series=?, repeticoes=?, carga=?, meta=?, focoMuscular=?, gifUrl=?, grupo=?, diasDaSemana=?, cor=? WHERE id=?`, 
+            `UPDATE "Prescricao" SET titulo=?, tipo=?, "duracaoMinutos"=?, series=?, repeticoes=?, carga=?, meta=?, "focoMuscular"=?, "gifUrl"=?, grupo=?, "diasDaSemana"=?, cor=? WHERE id=?`, 
             [titulo, tipo, duracaoMinutos || null, series || null, repeticoes || null, carga || null, meta || null, focoMuscular || null, gifUrl || null, grupo, diasDaSemana, cor, req.params.id]
         );
         return res.json({ sucesso: true });
@@ -367,7 +367,7 @@ app.put('/api/prescricoes/:id', async (req, res) => {
 
 app.get('/api/prescricoes/:usuarioId', async (req, res) => { 
     try { 
-        const itens = await db.all(`SELECT * FROM Prescricao WHERE usuarioId = ? ORDER BY grupo ASC, dataCriacao ASC`, [req.params.usuarioId]);
+        const itens = await db.all(`SELECT * FROM "Prescricao" WHERE "usuarioId" = ? ORDER BY grupo ASC, "dataCriacao" ASC`, [req.params.usuarioId]);
         return res.json(itens); 
     } catch (e) { 
         return res.status(500).json({ erro: e.message }); 
@@ -376,7 +376,7 @@ app.get('/api/prescricoes/:usuarioId', async (req, res) => {
 
 app.delete('/api/prescricoes/:id', async (req, res) => { 
     try { 
-        await db.run('DELETE FROM Prescricao WHERE id = ?', [req.params.id]); 
+        await db.run('DELETE FROM "Prescricao" WHERE id = ?', [req.params.id]); 
         return res.json({ sucesso: true }); 
     } catch (e) { 
         return res.status(500).json({ erro: e.message }); 
@@ -388,7 +388,7 @@ app.delete('/api/prescricoes/:id', async (req, res) => {
 // ==========================================
 app.get('/api/atividades/:usuarioId', async (req, res) => { 
     try { 
-        const historico = await db.all(`SELECT * FROM Atividade WHERE usuarioId = ? ORDER BY dataCriacao DESC`, [req.params.usuarioId]);
+        const historico = await db.all(`SELECT * FROM "Atividade" WHERE "usuarioId" = ? ORDER BY "dataCriacao" DESC`, [req.params.usuarioId]);
         return res.json(historico); 
     } catch (e) { 
         return res.status(500).json({ erro: e.message }); 
@@ -398,7 +398,7 @@ app.get('/api/atividades/:usuarioId', async (req, res) => {
 app.post('/api/atividades', async (req, res) => { 
     try { 
         await db.run(
-            `INSERT INTO Atividade (id, usuarioId, titulo, tipo, duracaoSegundos, series, repeticoes, carga, meta, focoMuscular, gifUrl, feedback, grupo, cor) 
+            `INSERT INTO "Atividade" (id, "usuarioId", titulo, tipo, "duracaoSegundos", series, repeticoes, carga, meta, "focoMuscular", "gifUrl", feedback, grupo, cor) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
             [crypto.randomUUID(), req.body.usuarioId, req.body.titulo, req.body.tipo || 'tempo', req.body.duracaoSegundos || 0, req.body.series || null, req.body.repeticoes || null, req.body.carga || null, req.body.meta || null, req.body.focoMuscular || null, req.body.gifUrl || null, req.body.feedback, req.body.grupo || 'Geral', req.body.cor || '#059669']
         ); 
@@ -411,7 +411,7 @@ app.post('/api/atividades', async (req, res) => {
 app.post('/api/alertas', async (req, res) => {
     try { 
         await db.run(
-            `INSERT INTO Alerta (id, usuarioId, tipo, mensagem, treino, grupo, resolvido) VALUES (?, ?, ?, ?, ?, ?, 0)`, 
+            `INSERT INTO "Alerta" (id, "usuarioId", tipo, mensagem, treino, grupo, resolvido) VALUES (?, ?, ?, ?, ?, ?, 0)`, 
             [crypto.randomUUID(), req.body.usuarioId, req.body.tipo, req.body.mensagem, req.body.treino || null, req.body.grupo || null]
         ); 
         return res.status(201).json({ sucesso: true }); 
@@ -423,9 +423,9 @@ app.post('/api/alertas', async (req, res) => {
 app.get('/api/alertas/pendentes', async (req, res) => { 
     try { 
         const alertas = await db.all(
-            `SELECT a.*, u.nome as utenteNome, u.celular as utenteTel 
-             FROM Alerta a JOIN User u ON a.usuarioId = u.id 
-             WHERE a.resolvido = 0 ORDER BY a.dataCriacao DESC`
+            `SELECT a.*, u.nome as "utenteNome", u.celular as "utenteTel" 
+             FROM "Alerta" a JOIN "User" u ON a."usuarioId" = u.id 
+             WHERE a.resolvido = 0 ORDER BY a."dataCriacao" DESC`
         );
         return res.json(alertas); 
     } catch (e) { 
@@ -435,7 +435,7 @@ app.get('/api/alertas/pendentes', async (req, res) => {
 
 app.put('/api/alertas/:id/resolver', async (req, res) => { 
     try { 
-        await db.run('UPDATE Alerta SET resolvido = 1 WHERE id = ?', [req.params.id]); 
+        await db.run('UPDATE "Alerta" SET resolvido = 1 WHERE id = ?', [req.params.id]); 
         return res.json({ sucesso: true }); 
     } catch (e) { 
         return res.status(500).json({ erro: e.message }); 
@@ -444,11 +444,11 @@ app.put('/api/alertas/:id/resolver', async (req, res) => {
 
 app.get('/api/estatisticas', async (req, res) => { 
     try { 
-        const idosos = await db.get(`SELECT COUNT(*) as total FROM User WHERE tipo = 'idoso'`);
-        const profissionais = await db.get(`SELECT COUNT(*) as total FROM User WHERE tipo = 'profissional'`);
-        const turmas = await db.get('SELECT COUNT(*) as total FROM Turma');
-        const treinos = await db.get('SELECT COUNT(*) as total FROM Atividade');
-        const alertas = await db.get('SELECT COUNT(*) as total FROM Alerta');
+        const idosos = await db.get(`SELECT COUNT(*) as total FROM "User" WHERE tipo = 'idoso'`);
+        const profissionais = await db.get(`SELECT COUNT(*) as total FROM "User" WHERE tipo = 'profissional'`);
+        const turmas = await db.get('SELECT COUNT(*) as total FROM "Turma"');
+        const treinos = await db.get('SELECT COUNT(*) as total FROM "Atividade"');
+        const alertas = await db.get('SELECT COUNT(*) as total FROM "Alerta"');
 
         return res.json({ 
             idosos: idosos.total, 
@@ -469,41 +469,9 @@ const PORT = process.env.PORT || 3001;
 
 iniciarBanco().then(async (dbInst) => {
     db = dbInst;
-    // Tabela User atualizada com a coluna fotoPerfil
-    await db.run(`CREATE TABLE IF NOT EXISTS User (
-        id TEXT PRIMARY KEY, 
-        nome TEXT, 
-        celular TEXT UNIQUE, 
-        email TEXT, 
-        pin TEXT, 
-        tipo TEXT, 
-        fotoPerfil TEXT, 
-        especialidade TEXT, 
-        registroProfissional TEXT, 
-        formacao TEXT, 
-        biografia TEXT, 
-        idade INTEGER, 
-        mobilidade TEXT, 
-        condicoes TEXT, 
-        contatoEmergenciaNome TEXT, 
-        contatoEmergenciaTel TEXT, 
-        dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
     
-    // Adicionar a coluna fotoPerfil a bases de dados existentes sem perder dados
-    try {
-        await db.run(`ALTER TABLE User ADD COLUMN fotoPerfil TEXT`);
-    } catch (err) {
-        // Se a coluna já existir, ignora o erro silenciosamente
-    }
-
-    await db.run(`CREATE TABLE IF NOT EXISTS Turma (id TEXT PRIMARY KEY, nome TEXT, horario TEXT, dias TEXT, cor TEXT, profissionalId TEXT, dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-    await db.run(`CREATE TABLE IF NOT EXISTS TurmaAluno (usuarioId TEXT, turmaId TEXT, PRIMARY KEY (usuarioId, turmaId))`);
-    await db.run(`CREATE TABLE IF NOT EXISTS Prescricao (id TEXT PRIMARY KEY, usuarioId TEXT, grupo TEXT, diasDaSemana TEXT, cor TEXT, titulo TEXT, tipo TEXT, duracaoMinutos INTEGER, series INTEGER, repeticoes INTEGER, carga TEXT, meta TEXT, focoMuscular TEXT, gifUrl TEXT, dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-    await db.run(`CREATE TABLE IF NOT EXISTS Atividade (id TEXT PRIMARY KEY, usuarioId TEXT, grupo TEXT, cor TEXT, titulo TEXT, tipo TEXT, duracaoSegundos INTEGER, series INTEGER, repeticoes INTEGER, carga TEXT, meta TEXT, focoMuscular TEXT, gifUrl TEXT, feedback TEXT, dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-    await db.run(`CREATE TABLE IF NOT EXISTS Alerta (id TEXT PRIMARY KEY, usuarioId TEXT, tipo TEXT, mensagem TEXT, resolvido INTEGER DEFAULT 0, treino TEXT, grupo TEXT, dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-    await db.run(`CREATE TABLE IF NOT EXISTS Acervo (id TEXT PRIMARY KEY, profissionalId TEXT, grupo TEXT, cor TEXT, titulo TEXT, tipo TEXT, duracaoMinutos INTEGER, series INTEGER, repeticoes INTEGER, carga TEXT, meta TEXT, focoMuscular TEXT, gifUrl TEXT, dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-    
-    console.log(`📦 Base de dados iniciada em modo: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📦 Base de dados conectada com sucesso em modo: ${process.env.NODE_ENV || 'development'}`);
     app.listen(PORT, () => console.log(`🚀 API Web Service a rodar na porta ${PORT}`));
+}).catch(err => {
+    console.error('Erro ao conectar ao banco de dados:', err);
 });
